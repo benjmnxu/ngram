@@ -14,7 +14,10 @@ impl<K: Hash + Eq, V> ConcurrentMultiMap<K, V> {
     // TODO:
     // Create a new empty ConcurrentMultiMap with the given number of buckets.
     pub fn new(bucket_count: usize) -> Self {
-        todo!()
+        let buckets = (0..bucket_count)
+            .map(|_| RwLock::new(LinkedList::new()))
+            .collect();
+        ConcurrentMultiMap{ buckets }
     }
 }
 
@@ -26,7 +29,20 @@ impl<K: Hash + Eq, V: Clone + Eq> ConcurrentMultiMap<K, V> {
     // key-values pair already exists. If it does, return early. Otherwise, add the key-value pair
     // to the linked list.
     pub fn set(&self, key: K, value: V) {
-        todo!()
+        let mut hasher = DefaultHasher::new();
+        key.hash(&mut hasher);
+        let hash = hasher.finish();
+
+        let bucket_index = (hash as usize) % self.buckets.len();
+
+        let mut bucket = self.buckets[bucket_index].write().unwrap();
+
+        for (k, v) in bucket.iter() {
+            if *k == key && *v == value {
+                return;
+            }
+        }
+        bucket.push_back((key, value));
     }
 
     // TODO:
@@ -39,7 +55,24 @@ impl<K: Hash + Eq, V: Clone + Eq> ConcurrentMultiMap<K, V> {
         K: Borrow<Q>,
         Q: Hash + Eq + ?Sized,
     {
-        todo!()
+
+        let mut hasher = DefaultHasher::new();
+        key.hash(&mut hasher);
+        let hash = hasher.finish();
+
+        let bucket_index = (hash as usize) % self.buckets.len();
+
+        let bucket = self.buckets[bucket_index].read().unwrap();
+        let mut found_values = Vec::new();
+
+        for (k, v) in bucket.iter() {
+            if k.borrow() == key {
+                found_values.push(v.clone());
+            }
+        }
+
+        found_values
+
     }
 }
 

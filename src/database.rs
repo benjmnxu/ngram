@@ -1,5 +1,5 @@
 use crate::multimap::ConcurrentMultiMap;
-use std::sync::Mutex;
+use std::{arch::aarch64::int16x4x2_t, sync::Mutex};
 
 // The archive struct contains two data structures: a ConcurrentMultiMap for storing the
 // reverse index that maps words to the documents they appear in, and a Mutex<Vec<String>> for
@@ -21,7 +21,8 @@ impl Database {
     // TODO:
     // Create a new empty archive. The map should have `BUCKETS` buckets.
     pub fn new() -> Self {
-        todo!()
+        let reverse_index = ConcurrentMultiMap::new(BUCKETS);
+        Database {reverse_index, blob_store: Mutex::new(Vec::new())}
     }
 
     // TODO:
@@ -33,17 +34,30 @@ impl Database {
     //    converting to lowercase or removing numerals.
     // 3. Add the document to the blob store
     pub fn publish(&self, doc: String) -> usize {
-        todo!()
+
+        let mut blob_store = self.blob_store.lock().unwrap();
+
+        let id = blob_store.len();
+        let words = doc.split_whitespace();
+        for word in words {
+            self.reverse_index.set(word.to_string(), id);
+        }
+        
+        blob_store.push(doc);
+
+        id
+
     }
     // TODO:
     // Use the reverse index to get the set of documents that contain the given word.
     pub fn search(&self, word: &str) -> Vec<usize> {
-        todo!()
+        self.reverse_index.get(word)
     }
     // TODO:
     // Retrieve the document with the given id from the blob store.
     // Return None if the given id is invalid.
     pub fn retrieve(&self, id: usize) -> Option<String> {
-        todo!()
+        let blob_store = self.blob_store.lock().unwrap();
+        blob_store.get(id).cloned()
     }
 }

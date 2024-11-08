@@ -1,7 +1,7 @@
 use crate::database::Database;
 use crate::message::*;
 use crate::pool::ThreadPool;
-use std::io::Write;
+use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::sync::{
     atomic::{AtomicBool, Ordering},
@@ -19,7 +19,31 @@ const WORKERS: usize = 16;
 // and then creating the appropriate response and turning it into bytes which are sent to along
 // the stream by calling the `write_all` method.
 fn process_message(state: Arc<ServerState>, request: Request, mut stream: TcpStream) {
-    todo!()
+    if state.is_stopped.load(Ordering::SeqCst) {
+        return;
+    }
+
+    // Process the request using the database
+    let response = match request {
+        Request::Publish { doc } => {
+            let index = state.database.publish(doc);
+            Response::PublishSuccess(index)
+        }
+        Request::Search { word } => {
+            let results = state.database.search(&word);
+            Response::SearchSuccess(results)
+        }
+        Request::Retrieve { id } => {
+            match state.database.retrieve(id) {
+                Some(doc) => Response::RetrieveSuccess(doc),
+                None => Response::Failure
+            }
+        }
+    };
+
+    let response_bytes = response.to_bytes();
+    let _  = stream.write_all(&response_bytes);
+        
 }
 
 /// A struct that contains the state of the server
@@ -48,7 +72,8 @@ impl Server {
     // TODO:
     // Create a new server by using the `ServerState::new` function
     pub fn new() -> Self {
-        todo!()
+        let state = Arc::new(ServerState::new());
+        Server{ state }
     }
 
     // TODO:
@@ -67,7 +92,13 @@ impl Server {
     // `ServerState` to see if the server has been stopped. If it has, you should break out of the
     // loop and return.
     fn listen(&self, port: u16) {
-        todo!()
+        let listener = std::net::TcpListener::bind(("127.0.0.1", port)).unwrap();
+        while !self.state.is_stopped.load(Ordering::SeqCst) {
+           let (stream, _) = listener.accept().unwrap();
+           let req: Request = Request::from_bytes(&stream).unwrap();
+           let state = Arc::clone(&self.state);
+           self.state.pool.execute(move || { process_message(state, req, stream) });
+        }
     }
 
     // This function has already been partially completed for you
@@ -84,9 +115,15 @@ impl Server {
                 panic!("Error setting Ctrl-C handler: {}", e);
             }
         }
+        let state = Arc::clone(&self.state);
+        let port_clone = port;
+        thread::spawn(move || {
+            let server = Server { state };
+            server.listen(port_clone);
+        });
 
-        // TODO: Call the listen function and then loop (doing nothing) until the server has been stopped
-        todo!()
+        // Main loop to keep the server alive until stopped
+        while !self.state.is_stopped.load(Ordering::SeqCst) {}
     }
     pub fn stop(&self) {
         self.state.is_stopped.store(true, Ordering::SeqCst);

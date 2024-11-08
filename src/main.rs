@@ -9,7 +9,30 @@ use ngram::server::Server;
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 struct Args {
+    #[command(subcommand)]
+    command: Command
 }
+
+#[derive(Subcommand, Debug)]
+enum Command {
+    Client {
+        server_address: String,
+        server_port: u16,
+        #[command(subcommand)]
+        action: ClientAction,
+    },
+    Server {
+        listen_port: u16,
+    },
+}
+
+#[derive(Subcommand, Debug)]
+enum ClientAction {
+    Publish {path: String},
+    Search {word: String},
+    Retrieve {id: usize}
+}
+
 
 // TODO:
 // Inspect the contents of the `args` struct that has been created from the command line arguments
@@ -17,5 +40,28 @@ struct Args {
 // appropriate request. You may find it helpful to print the request response.
 fn main() {
     let args = Args::parse();
-    todo!()
+    match args.command {
+        Command::Client { 
+            server_address, 
+            server_port, 
+            action } => {
+                let client = Client::new(&server_address, server_port);
+                match action {
+                    ClientAction::Publish { path } => {
+                        client.publish_from_path(&path).unwrap();
+                    }
+                    ClientAction::Retrieve { id } => {
+                        client.retrieve(id);
+
+                    }
+                    ClientAction::Search { word } => {
+                        client.search(&word);
+                    }
+                }
+        }
+        Command::Server { listen_port } => {
+            let server = Server::new();
+            server.run(listen_port);
+        }
+    }
 }
