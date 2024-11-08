@@ -1,7 +1,7 @@
 use crate::database::Database;
 use crate::message::*;
 use crate::pool::ThreadPool;
-use std::io::{Read, Write};
+use std::io::Write;
 use std::net::{TcpListener, TcpStream};
 use std::sync::{
     atomic::{AtomicBool, Ordering},
@@ -122,7 +122,6 @@ impl Server {
             server.listen(port_clone);
         });
 
-        // Main loop to keep the server alive until stopped
         while !self.state.is_stopped.load(Ordering::SeqCst) {}
     }
     pub fn stop(&self) {

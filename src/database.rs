@@ -1,5 +1,5 @@
 use crate::multimap::ConcurrentMultiMap;
-use std::{arch::aarch64::int16x4x2_t, sync::Mutex};
+use std::sync::Mutex;
 
 // The archive struct contains two data structures: a ConcurrentMultiMap for storing the
 // reverse index that maps words to the documents they appear in, and a Mutex<Vec<String>> for

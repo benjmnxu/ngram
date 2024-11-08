@@ -13,43 +13,39 @@ impl Request {
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut payload = match self {
             Self::Publish { doc } => {
-                let mut bytes = vec![0u8]; // 0 represents "Publish"
+                let mut bytes = vec![0u8];
                 bytes.extend(doc.as_bytes());
                 bytes
             }
             Self::Search { word } => {
-                let mut bytes = vec![1u8]; // 1 represents "Search"
+                let mut bytes = vec![1u8];
                 bytes.extend(word.as_bytes());
                 bytes
             }
             Self::Retrieve { id } => {
-                let mut bytes = vec![2u8]; // 2 represents "Retrieve"
+                let mut bytes = vec![2u8];
                 bytes.extend(&id.to_be_bytes());
                 bytes
             }
         };
 
-        // Prepend the length of the payload as a 4-byte big-endian integer
         let mut message = (payload.len() as u32).to_be_bytes().to_vec();
         message.append(&mut payload);
         message
     }
 
     pub fn from_bytes<R: std::io::Read>(mut reader: R) -> Option<Self> {
-        // Read the length (4 bytes)
         let mut length_bytes = [0u8; 4];
         if reader.read_exact(&mut length_bytes).is_err() {
             return None;
         }
         let length = u32::from_be_bytes(length_bytes) as usize;
 
-        // Read the remaining payload based on the length
         let mut payload = vec![0u8; length];
         if reader.read_exact(&mut payload).is_err() {
             return None;
         }
 
-        // Extract the variant identifier
         let variant = payload[0];
         match variant {
             0 => {

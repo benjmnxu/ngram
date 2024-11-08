@@ -1,6 +1,6 @@
 use crate::message::*;
 use std::default::Default;
-use std::io::{Read, Write};
+use std::io::Write;
 use std::net::SocketAddr;
 
 /// A client for interacting with the server at address `address`
