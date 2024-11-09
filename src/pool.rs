@@ -36,7 +36,10 @@ impl Worker {
             }
         });
 
-        Worker{id, thread: Some(thread)}
+        Worker {
+            id,
+            thread: Some(thread),
+        }
     }
 }
 
@@ -59,7 +62,10 @@ impl ThreadPool {
             workers.push(Worker::new(i, Arc::clone(&receiver)));
         }
 
-        ThreadPool {workers, sender: Some(tx)}
+        ThreadPool {
+            workers,
+            sender: Some(tx),
+        }
     }
 
     // TODO:
@@ -94,4 +100,3 @@ impl Drop for ThreadPool {
         }
     }
 }
-

@@ -17,7 +17,7 @@ impl<K: Hash + Eq, V> ConcurrentMultiMap<K, V> {
         let buckets = (0..bucket_count)
             .map(|_| RwLock::new(LinkedList::new()))
             .collect();
-        ConcurrentMultiMap{ buckets }
+        ConcurrentMultiMap { buckets }
     }
 }
 
@@ -55,7 +55,6 @@ impl<K: Hash + Eq, V: Clone + Eq> ConcurrentMultiMap<K, V> {
         K: Borrow<Q>,
         Q: Hash + Eq + ?Sized,
     {
-
         let mut hasher = DefaultHasher::new();
         key.hash(&mut hasher);
         let hash = hasher.finish();
@@ -72,7 +71,5 @@ impl<K: Hash + Eq, V: Clone + Eq> ConcurrentMultiMap<K, V> {
         }
 
         found_values
-
     }
 }
-

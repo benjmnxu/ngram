@@ -33,17 +33,14 @@ fn process_message(state: Arc<ServerState>, request: Request, mut stream: TcpStr
             let results = state.database.search(&word);
             Response::SearchSuccess(results)
         }
-        Request::Retrieve { id } => {
-            match state.database.retrieve(id) {
-                Some(doc) => Response::RetrieveSuccess(doc),
-                None => Response::Failure
-            }
-        }
+        Request::Retrieve { id } => match state.database.retrieve(id) {
+            Some(doc) => Response::RetrieveSuccess(doc),
+            None => Response::Failure,
+        },
     };
 
     let response_bytes = response.to_bytes();
-    let _  = stream.write_all(&response_bytes);
-        
+    let _ = stream.write_all(&response_bytes);
 }
 
 /// A struct that contains the state of the server
@@ -73,7 +70,7 @@ impl Server {
     // Create a new server by using the `ServerState::new` function
     pub fn new() -> Self {
         let state = Arc::new(ServerState::new());
-        Server{ state }
+        Server { state }
     }
 
     // TODO:
@@ -94,10 +91,12 @@ impl Server {
     fn listen(&self, port: u16) {
         let listener = std::net::TcpListener::bind(("127.0.0.1", port)).unwrap();
         while !self.state.is_stopped.load(Ordering::SeqCst) {
-           let (stream, _) = listener.accept().unwrap();
-           let req: Request = Request::from_bytes(&stream).unwrap();
-           let state = Arc::clone(&self.state);
-           self.state.pool.execute(move || { process_message(state, req, stream) });
+            let (stream, _) = listener.accept().unwrap();
+            let req: Request = Request::from_bytes(&stream).unwrap();
+            let state = Arc::clone(&self.state);
+            self.state
+                .pool
+                .execute(move || process_message(state, req, stream));
         }
     }
 

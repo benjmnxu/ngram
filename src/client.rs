@@ -20,7 +20,7 @@ impl Client {
     // You can create an IpAddr from a string with `address.parse().unwrap()`.
     pub fn new(address: &str, port: u16) -> Self {
         let socket = SocketAddr::new(address.parse().unwrap(), port);
-        Client {address: socket}
+        Client { address: socket }
     }
 
     // TODO:
@@ -34,7 +34,7 @@ impl Client {
     // `TcpStream` implements `Read`.
     fn send(&self, request: &Request) -> Option<Response> {
         let mut stream = std::net::TcpStream::connect(self.address).unwrap();
-        
+
         if stream.write_all(&request.to_bytes()).is_err() {
             return None;
         }
@@ -57,7 +57,9 @@ impl Client {
     // Send a `Search` request to the server with the given `word`. Return the response from the
     // server.
     pub fn search(&self, word: &str) -> Option<Response> {
-        let req = Request::Search { word: word.to_string() };
+        let req = Request::Search {
+            word: word.to_string(),
+        };
         self.send(&req)
     }
     // TODO:

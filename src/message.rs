@@ -72,7 +72,6 @@ impl Request {
     }
 }
 
-
 /// A response from the server to the client
 #[derive(Debug, PartialEq)]
 pub enum Response {
